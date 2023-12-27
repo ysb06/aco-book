@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Cookie, Depends, FastAPI, Form, HTTPException, Request, Response
@@ -8,19 +9,26 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-
-from context import CONTEXT
-from database import User, get_db
+from database import User, Database
 import jwt
-
-FormInputType = Annotated[str, Form()]
 
 
 class AuthReq(BaseModel):
     token: str
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db.create_tables()
+    yield
+    db.dispose()
+
+
+FormInputType = Annotated[str, Form()]
+db = Database()
+
+
+app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -42,7 +50,7 @@ async def get_login_token(
     res: Response,
     username: FormInputType,
     password: FormInputType,
-    db: Session = Depends(get_db),
+    db: Session = Depends(db.get_db),
 ):
     result = (
         db.query(User.username, User.password).filter(User.username == username).first()
@@ -64,7 +72,7 @@ async def signup_user(
     username: FormInputType,
     password: FormInputType,
     name: FormInputType,
-    db: Session = Depends(get_db),
+    db: Session = Depends(db.get_db),
 ):
     new_user = User(username=username, password=password, full_name=name)
     db.add(new_user)
