@@ -24,7 +24,7 @@
     <section>
         <article>
             <h3>로그인</h3>
-            <form is="fetch-form" id="login-form" action="/token" method="post">
+            <form is="fetch-form" action="/token" method="post">
                 <input name="username" type="text" autocomplete="username" placeholder="ID" />
                 <input name="password" type="password" placeholder="Password" />
                 <input type="submit" />
@@ -32,7 +32,7 @@
         </article>
         <article>
             <h3>사용자 등록</h3>
-            <form is="fetch-form" id="signup-form" action="/user" method="post">
+            <form is="fetch-form" action="/user" method="post">
                 <input name="username" type="text" autocomplete="off" placeholder="ID" />
                 <input name="password" type="password" autocomplete="new-password" placeholder="Password" />
                 <input name="name" type="text" autocomplete="name" placeholder="Full Name" />
@@ -40,8 +40,21 @@
             </form>
         </article>
         <article>
+            <h3>데이터 입력</h3>
+            <form is="fetch-form" action="/record" method="post">
+                <!-- <input type="datetime-local" name="date"> -->
+                <label>
+                    <input type="checkbox" name="income"> 수입 여부
+                </label>
+                <input type="text" name="category" placeholder="Category" />
+                <input type="number" name="payment_amount" placeholder="Amount" />
+                <input type="text" name="currency" placeholder="Currency" />
+                <input type="submit" />
+            </form>
+        </article>
+        <article>
             <h3>개인 테이블 표시</h3>
-            <form is="fetch-form" action="/book" method="post">
+            <form is="fetch-table-form" action="/book" method="post">
                 <input type="submit" />
             </form>
         </article>
