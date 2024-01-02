@@ -47,14 +47,18 @@
                     <input type="checkbox" name="income"> 수입 여부
                 </label>
                 <input type="text" name="category" placeholder="Category" />
+                <input type="text" name="detail" placeholder="Detail" />
+                <input type="text" name="asset" placeholder="Asset" />
                 <input type="number" name="payment_amount" placeholder="Amount" />
-                <input type="text" name="currency" placeholder="Currency" />
+                <input type="text" name="currency" placeholder="Currency" value="KRW" />
+                <input type="number" name="approved_amount" value="0" placeholder="Approved Amount" />
+                <input type="text" name="note" placeholder="Note" />
                 <input type="submit" />
             </form>
         </article>
         <article>
             <h3>개인 테이블 표시</h3>
-            <form is="fetch-table-form" action="/book" method="post">
+            <form is="fetch-table-form" action="/record" method="get">
                 <input type="submit" />
             </form>
         </article>

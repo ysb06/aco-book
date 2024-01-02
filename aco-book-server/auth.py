@@ -1,18 +1,20 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
+from typing_extensions import Annotated, Doc
 import jwt
 from datetime import datetime, timezone
 import hashlib
+from fastapi import HTTPException
 
 
-class VerificationFailedError(Exception):
+class VerificationFailedError(HTTPException):
     def __init__(self, text: str) -> None:
-        super().__init__(text)
+        super().__init__(401, text)
 
 
 activated_sessions: Dict[str, int] = {}
 
 
-def generate_token(user_id: str):
+def generate_token(user_id: int):
     token = jwt.encode(
         {"iat": datetime.now(tz=timezone.utc)}, "ms_key", algorithm="HS256"
     )
@@ -23,6 +25,11 @@ def generate_token(user_id: str):
 
 def verify_token(token: str) -> int:
     user_id = -1
+
+    # 차후 권한 관련 코드도 작성
+    
+    if token is None:
+        raise VerificationFailedError("No Token")
 
     try:
         _ = jwt.decode(token, key="ms_key", algorithms=["HS256"])

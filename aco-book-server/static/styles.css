@@ -7,3 +7,20 @@ form {
 form input {
     margin: 0.25em 0;
 }
+
+.fetch-result {
+    width: 100%;
+}
+
+.fetch-result table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fetch-result th, .fetch-result td {
+    border: 1px solid black;
+}
+
+.fetch-result td {
+    text-align: center;
+}

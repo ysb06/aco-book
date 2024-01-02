@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import Annotated, Optional, Union
+from typing import Optional
 from datetime import datetime, timezone
 
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, Response
@@ -28,7 +28,7 @@ class RecordRequest(BaseModel):
     date: Optional[datetime] = None
     income: bool = False
     category: Optional[str] = None
-    details: Optional[str] = None
+    detail: Optional[str] = None
     asset: Optional[str] = None
     payment_amount: float
     currency: Optional[Currency] = None
@@ -38,7 +38,7 @@ class RecordRequest(BaseModel):
     @validator("date", pre=True, always=True)
     def parse_date(cls, val):
         if isinstance(val, int):
-            return datetime.utcfromtimestamp(val)
+            return datetime.utcfromtimestamp(val).astimezone(tz=timezone.utc)
 
         if isinstance(val, str):
             try:
@@ -47,11 +47,11 @@ class RecordRequest(BaseModel):
                 )
             except ValueError:
                 raise ValueError("Invalid date format")
-        
+
         if val is not None:
             raise ValueError("Unknown date format")
 
-        return datetime.now()
+        return datetime.now().astimezone(tz=timezone.utc)
 
 
 @asynccontextmanager
@@ -76,27 +76,26 @@ def get_root(request: Request):
 
 @app.post("/token/")
 async def get_login_token(
-    res: Response,
-    auth_data: UserRequest,
-    db: Session = Depends(db.get_db),
+    res: Response, auth_data: UserRequest, db: Session = Depends(db.get_db)
 ):
-    result = db.query(User.password).filter(User.username == auth_data.username).first()
+    result = (
+        db.query(User.id, User.password)
+        .filter(User.username == auth_data.username)
+        .first()
+    )
     if not result:
         raise HTTPException(status_code=401, detail="Incorrect username")
-    if result[0] != auth.hash_password(auth_data.password):
+    if result[1] != auth.hash_password(auth_data.password):
         raise HTTPException(status_code=401, detail="Incorrect password")
 
-    token = auth.generate_token(auth_data.username)
+    token = auth.generate_token(result[0])
     res.set_cookie(key="token", value=token, httponly=True)
 
     return {"Login": "Complete"}
 
 
 @app.post("/user/")
-async def signup_user(
-    user_data: UserSignUpRequest,
-    db: Session = Depends(db.get_db),
-):
+async def signup_user(user_data: UserSignUpRequest, db: Session = Depends(db.get_db)):
     new_user = User(
         username=user_data.username,
         password=auth.hash_password(user_data.password),
@@ -111,20 +110,43 @@ async def signup_user(
     return {"SignUp": "Complete"}
 
 
+@app.get("/record/", response_class=JSONResponse)
+async def get_record_all(token: str = Cookie(None), db: Session = Depends(db.get_db)):
+    _ = auth.verify_token(token)
+
+    results = (
+        db.query(FinancialRecord, User.full_name)
+        .join(User, FinancialRecord.user_id == User.id)
+        .all()
+    )
+
+    col_names = list(FinancialRecord.get_columns())
+    col_names.remove("user_id")
+    data = {
+        "columns": col_names,
+        "rows": [
+            {
+                **{col_name: getattr(result, col_name) for col_name in col_names},
+                "name": full_name,
+            }
+            for result, full_name in results
+        ],
+    }
+    return data
+
+
 @app.post("/record/", response_class=JSONResponse)
 async def post_record(
-    record: RecordRequest,
-    token: str = Cookie(None),
-    db: Session = Depends(db.get_db),
+    record: RecordRequest, token: str = Cookie(None), db: Session = Depends(db.get_db)
 ):
+    user_id = auth.verify_token(token)
     try:
-        user_id = auth.verify_token(token)
         fi_rec = FinancialRecord(
             date=record.date,
             user_id=user_id,  # 유저 ID 설정
             in_out=record.income,
             category=record.category,
-            details=record.details,
+            detail=record.detail,
             asset=record.asset,
             payment_amount=record.payment_amount,
             currency=record.currency,
@@ -135,20 +157,16 @@ async def post_record(
         db.add(fi_rec)
         db.commit()
         db.refresh(fi_rec)
-
-        return dict(list(record.model_dump().items())[:2])
-    except auth.VerificationFailedError as e:
-        raise HTTPException(status_code=401, detail=str(e))
     except ValueError:
         raise HTTPException(status_code=400, detail="DateTime format may not correct")
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+    return dict(list(record.model_dump().items())[:2])
 
-@app.post("/book/", response_class=JSONResponse)
-async def get_book(request: Request, token: str = Cookie(None)):
-    if auth.verify_token(token):
-        return {"Result": "OK"}
-    else:
-        raise HTTPException(status_code=401, detail="Not Verified Token")
+
+@app.put("/record/", response_class=JSONResponse)
+async def update_record(token: str = Cookie(None), db: Session = Depends(db.get_db)):
+    auth.verify_token(token)
+    return

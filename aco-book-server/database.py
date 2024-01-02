@@ -1,4 +1,5 @@
 import enum
+from typing import List
 
 from sqlalchemy import (
     Column,
@@ -66,7 +67,7 @@ class FinancialRecord(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     in_out = Column(Boolean, nullable=False)
     category = Column(String)
-    details = Column(String)
+    detail = Column(String)
     asset = Column(String)
     payment_amount = Column(Float, nullable=False)
     currency = Column(Enum(Currency))
@@ -75,3 +76,6 @@ class FinancialRecord(Base):
 
     # User 테이블과의 관계
     user = relationship("User")
+
+    def get_columns():
+        return [col.name for col in FinancialRecord.__table__.columns]
