@@ -17,7 +17,7 @@ class FetchForm extends HTMLFormElement {
         this.removeEventListener('submit', this.onSubmitHandler);
     }
 
-    onSubmitHandler(event) {
+    async onSubmitHandler(event) {
         event.preventDefault();
         this.resultDiv.textContent = "[Sending...]";
 
@@ -37,7 +37,7 @@ class FetchForm extends HTMLFormElement {
             headers: {}
         };
 
-        var route = this.action
+        let route = this.action
         if (this.method.toUpperCase() === 'GET') {
             const queryParams = new URLSearchParams(jsonData).toString();
             route += '?' + queryParams;
@@ -46,64 +46,114 @@ class FetchForm extends HTMLFormElement {
             options.body = JSON.stringify(jsonData);
         }
 
-        fetch(route, options).then(response => {
-            const result_text = `[Result(${response.status}): ${response.statusText}] `;
-            response.json().then(data => this.showData(response, result_text, data));
-        }).catch(error => console.error('Error:', error));
+        try {
+            const response = await fetch(route, options);
+            const data = await response.json();
+
+            const scrollTop = this.resultDiv.scrollTop;
+            this.showData(response.status, response.statusText, data);
+            this.resultDiv.scrollTop = scrollTop;
+        } catch (error) {
+            console.error('Error:', error);
+            this.resultDiv.textContent = `Error: ${error.message}`;
+        }
     }
 
-    showData(_, result, data) {
-        const scrollTop = this.resultDiv.scrollTop;
-        this.resultDiv.textContent = result + JSON.stringify(data);
-        this.resultDiv.scrollTop = scrollTop;
+    showData(status, message, data) {
+        this.resultDiv.textContent = `[Result(${status}): ${message}] ` + JSON.stringify(data);
     }
 }
 
-class FetchTableForm extends FetchForm {
-    showData(res, result, data) {
-        const scrollTop = this.resultDiv.scrollTop;
+class DataElement {
+    constructor(type) {
+        this.element = document.createElement(type)
+    }
+}
 
-        this.resultDiv.textContent = result
-        if (res.status == 200) {
-            const table = this.createTable(data)
-            this.resultDiv.appendChild(table)
-        } else {
-            this.resultDiv.textContent = result + JSON.stringify(data);
-        }
+class DataTable extends DataElement {
+    constructor(data) {
+        super('table')
 
-        this.resultDiv.scrollTop = scrollTop;
+        this.columns = data.columns
+        const thead = document.createElement('thead');
+        thead.appendChild(this.generateHeader(this.columns));
+        this.element.appendChild(thead);
+
+        this.body = document.createElement('tbody');
+        this.rows = data.rows.map(row_data => {
+            const row = new DataRow(this.columns, row_data)
+            this.body.appendChild(row.element)
+
+            return row
+        })
+        this.element.appendChild(this.body);
     }
 
-    createTable(data) {
-        // 테이블 생성
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const tbody = document.createElement('tbody');
-
-        const headers = data.columns;
+    generateHeader(columns) {
         const headerRow = document.createElement('tr');
-        headers.forEach(headerText => {
+        headerRow.appendChild(document.createElement('th'));
+
+        columns.forEach(headerText => {
             const header = document.createElement('th');
             header.textContent = headerText;
             headerRow.appendChild(header);
         });
-        thead.appendChild(headerRow);
 
-        // 테이블 바디 생성
-        data.rows.forEach(row_data => {
-            const row = document.createElement('tr');
-            headers.forEach(key => {
-                const cell = document.createElement('td');
-                cell.textContent = row_data[key];
-                row.appendChild(cell);
-            });
-            tbody.appendChild(row);
+        return headerRow
+    }
+}
+
+class DataRow extends DataElement {
+    constructor(columns, row_data) {
+        super('tr');
+
+        const checkboxCell = document.createElement('td')
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.addEventListener('change', this.onCheckboxChange.bind(this));
+
+        checkboxCell.appendChild(checkbox)
+        this.element.appendChild(checkboxCell)
+
+        this.selected = false;
+        this.columns = columns
+        this.values = row_data.map(value => {
+            const cell = new DataCell(value)
+            this.element.appendChild(cell.element)
+
+            return cell
         });
+    }
 
-        table.appendChild(thead);
-        table.appendChild(tbody);
+    onCheckboxChange(event) {
+        this.selected = event.target.checked
+    }
+}
 
-        return table;
+class DataCell extends DataElement {
+    constructor(value) {
+        super('td')
+
+        this.value = value
+        this.element.textContent = value
+    }
+}
+
+class FetchTableForm extends FetchForm {
+    constructor() {
+        super()
+        this.dataTable = null;
+    }
+    
+    showData(status, message, data) {
+        if (status == 200) {
+            this.dataTable = new DataTable(data);
+
+            this.resultDiv.textContent = `[Result(${status}): ${message}]`;
+            this.resultDiv.appendChild(this.dataTable.element);
+        } else {
+            super.showData(status, message, data)
+        }
     }
 }
 

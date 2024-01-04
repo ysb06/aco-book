@@ -125,13 +125,11 @@ async def get_record_all(token: str = Cookie(None), db: Session = Depends(db.get
     data = {
         "columns": col_names,
         "rows": [
-            {
-                **{col_name: getattr(result, col_name) for col_name in col_names},
-                "name": full_name,
-            }
+            [getattr(result, col_name) for col_name in col_names] + [full_name]
             for result, full_name in results
         ],
     }
+    data["columns"].append("full_name")
     return data
 
 
