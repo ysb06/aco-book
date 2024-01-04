@@ -169,3 +169,5 @@ dmypy.json
 */data/*/**
 !*/data/*/README.md
 *.db
+
+aco-book-server/requirements.txt
