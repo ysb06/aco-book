@@ -10,7 +10,7 @@
             "request": "launch",
             "module": "uvicorn",
             "console": "integratedTerminal",
-            "args": ["main:app", "--reload"]
+            "args": ["app:app", "--reload"]
         },
         {
             "name": "Python: Current File",

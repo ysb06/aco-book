@@ -65,7 +65,6 @@ class FinancialRecord(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     date = Column(DateTime, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    in_out = Column(Boolean, nullable=False)
     category = Column(String)
     detail = Column(String)
     asset = Column(String)

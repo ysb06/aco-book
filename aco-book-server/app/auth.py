@@ -1,5 +1,4 @@
-from typing import Any, Dict, Optional
-from typing_extensions import Annotated, Doc
+from typing import Any, Dict
 import jwt
 from datetime import datetime, timezone
 import hashlib

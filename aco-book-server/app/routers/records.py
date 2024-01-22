@@ -1,32 +1,24 @@
+from fastapi import APIRouter
 from contextlib import asynccontextmanager
-from typing import Optional
 from datetime import datetime, timezone
+from typing import Dict, List, Optional
 
+from app.database import Currency, Database, FinancialRecord, User, lifespan
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, validator
-from sqlalchemy.exc import IntegrityError
+
 from sqlalchemy.orm import Session
 
-import auth
-from database import Database, User, Currency, FinancialRecord
-
-
-class UserRequest(BaseModel):
-    username: str
-    password: str
-
-
-class UserSignUpRequest(UserRequest):
-    name: str
+import app.auth as auth
 
 
 class RecordRequest(BaseModel):
+    username: Optional[str] = None
     date: Optional[datetime] = None
-    income: bool = False
     category: Optional[str] = None
     detail: Optional[str] = None
     asset: Optional[str] = None
@@ -54,63 +46,23 @@ class RecordRequest(BaseModel):
         return datetime.now().astimezone(tz=timezone.utc)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    db.create_tables()
-    yield
-    db.dispose()
+class RecordResponseSchema(BaseModel):
+    id: int
+    date: str
+    category: str
+    detail: str
+    asset: str
+    payment_amount: float
+    currency: str
+    approved_amount: float
+    note: str
+    full_name: str
 
 
-db = Database()
-templates = Jinja2Templates(directory="templates")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-app = FastAPI(lifespan=lifespan)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+router = APIRouter()
 
 
-@app.get("/", response_class=HTMLResponse)
-def get_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-@app.post("/token/")
-async def get_login_token(
-    res: Response, auth_data: UserRequest, db: Session = Depends(db.get_db)
-):
-    result = (
-        db.query(User.id, User.password)
-        .filter(User.username == auth_data.username)
-        .first()
-    )
-    if not result:
-        raise HTTPException(status_code=401, detail="Incorrect username")
-    if result[1] != auth.hash_password(auth_data.password):
-        raise HTTPException(status_code=401, detail="Incorrect password")
-
-    token = auth.generate_token(result[0])
-    res.set_cookie(key="token", value=token, httponly=True)
-
-    return {"Login": "Complete"}
-
-
-@app.post("/user/")
-async def signup_user(user_data: UserSignUpRequest, db: Session = Depends(db.get_db)):
-    new_user = User(
-        username=user_data.username,
-        password=auth.hash_password(user_data.password),
-        full_name=user_data.name,
-    )
-    db.add(new_user)
-    try:
-        db.commit()
-    except IntegrityError:
-        raise HTTPException(status_code=409, detail="Username already exists")
-    db.refresh(new_user)
-    return {"SignUp": "Complete"}
-
-
-@app.get("/record/", response_class=JSONResponse)
+@router.get("/records/", response_class=JSONResponse)
 async def get_record_all(token: str = Cookie(None), db: Session = Depends(db.get_db)):
     _ = auth.verify_token(token)
 
@@ -120,17 +72,16 @@ async def get_record_all(token: str = Cookie(None), db: Session = Depends(db.get
         .all()
     )
 
-    col_names = list(FinancialRecord.get_columns())
-    col_names.remove("user_id")
-    data = {
-        "columns": col_names,
-        "rows": [
-            [getattr(result, col_name) for col_name in col_names] + [full_name]
-            for result, full_name in results
-        ],
-    }
-    data["columns"].append("full_name")
-    return data
+    column_names = list(RecordResponseSchema.model_fields.keys())
+    records = [
+        [
+            getattr(record, col) if hasattr(record, col) else full_name
+            for col in column_names
+        ]
+        for record, full_name in results
+    ]
+
+    return {"columns": column_names, "rows": records}
 
 
 @app.post("/record/", response_class=JSONResponse)
@@ -138,11 +89,13 @@ async def post_record(
     record: RecordRequest, token: str = Cookie(None), db: Session = Depends(db.get_db)
 ):
     user_id = auth.verify_token(token)
+    if record.username is not None:
+        user_id = db.query(User.id).filter(User.username == record.username).first()[0]
+
     try:
         fi_rec = FinancialRecord(
             date=record.date,
             user_id=user_id,  # 유저 ID 설정
-            in_out=record.income,
             category=record.category,
             detail=record.detail,
             asset=record.asset,
@@ -161,7 +114,7 @@ async def post_record(
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-    return dict(list(record.model_dump().items())[:2])
+    return dict(list(record.model_dump().items())[1:3])
 
 
 @app.put("/record/", response_class=JSONResponse)

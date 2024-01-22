@@ -1,6 +1,7 @@
 const datetime_regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
 
 class FetchForm extends HTMLFormElement {
+    // 데이터 추가 뿐만 아니라 아이디에 따른 수정 기능도 추가
     constructor() {
         super()
         this.resultDiv = document.createElement('div');
@@ -28,7 +29,9 @@ class FetchForm extends HTMLFormElement {
                 const date = new Date(value);
                 jsonData[key] = date.toJSON();
             } else {
-                jsonData[key] = value
+                if (value.length !== 0) {
+                    jsonData[key] = value
+                }
             }
         });
 
@@ -74,14 +77,13 @@ class DataTable extends DataElement {
     constructor(data) {
         super('table')
 
-        this.columns = data.columns
         const thead = document.createElement('thead');
-        thead.appendChild(this.generateHeader(this.columns));
+        thead.appendChild(this.generateHeader(data.columns));
         this.element.appendChild(thead);
 
         this.body = document.createElement('tbody');
         this.rows = data.rows.map(row_data => {
-            const row = new DataRow(this.columns, row_data)
+            const row = new DataRow(row_data)
             this.body.appendChild(row.element)
 
             return row
@@ -91,8 +93,6 @@ class DataTable extends DataElement {
 
     generateHeader(columns) {
         const headerRow = document.createElement('tr');
-        headerRow.appendChild(document.createElement('th'));
-
         columns.forEach(headerText => {
             const header = document.createElement('th');
             header.textContent = headerText;
@@ -104,38 +104,16 @@ class DataTable extends DataElement {
 }
 
 class DataRow extends DataElement {
-    constructor(columns, row_data) {
+    constructor(row_data) {
         super('tr');
 
-        const checkboxCell = document.createElement('td')
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.addEventListener('change', this.onCheckboxChange.bind(this));
-
-        checkboxCell.appendChild(checkbox)
-        this.element.appendChild(checkboxCell)
-
-        this.selected = false;
-        this.columns = columns
         this.values = row_data.map(value => {
-            const cell = new DataCell(value)
-            this.element.appendChild(cell.element)
+            const cell = document.createElement('td')
+            cell.textContent = value
+            this.element.appendChild(cell)
 
             return cell
         });
-    }
-
-    onCheckboxChange(event) {
-        this.selected = event.target.checked
-    }
-}
-
-class DataCell extends DataElement {
-    constructor(value) {
-        super('td')
-
-        this.value = value
-        this.element.textContent = value
     }
 }
 
