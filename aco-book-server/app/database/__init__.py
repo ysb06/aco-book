@@ -1,14 +1,6 @@
-from database import *
-from contextlib import asynccontextmanager
+from app.database.database import db, User, Currency, FinancialRecord
 
-from fastapi import FastAPI
-
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    db.create_tables()
-    yield
-    db.dispose()
-
-
-db = Database()
+db
+User
+Currency
+FinancialRecord

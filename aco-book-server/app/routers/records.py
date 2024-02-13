@@ -1,30 +1,27 @@
-from fastapi import APIRouter
-from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Optional
 
-from app.database import Currency, Database, FinancialRecord, User, lifespan
-from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.security import OAuth2PasswordBearer
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, validator
-
 from sqlalchemy.orm import Session
+import logging
 
-import app.auth as auth
+from ..auth import verify_token
+from ..database import Currency, FinancialRecord, User, db
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
 
 
-class RecordRequest(BaseModel):
-    username: Optional[str] = None
+class RecordBaseSchema(BaseModel):
     date: Optional[datetime] = None
     category: Optional[str] = None
     detail: Optional[str] = None
     asset: Optional[str] = None
-    payment_amount: float
+    payment_amount: Optional[float] = 0.0
     currency: Optional[Currency] = None
-    approved_amount: Optional[float] = None
+    approved_amount: Optional[float] = 0.0
     note: Optional[str] = None
 
     @validator("date", pre=True, always=True)
@@ -46,25 +43,20 @@ class RecordRequest(BaseModel):
         return datetime.now().astimezone(tz=timezone.utc)
 
 
-class RecordResponseSchema(BaseModel):
+class RecordChangeSchema(RecordBaseSchema):
+    username: Optional[str] = None
+
+
+class RecordResponseSchema(RecordBaseSchema):
     id: int
-    date: str
-    category: str
-    detail: str
-    asset: str
-    payment_amount: float
-    currency: str
-    approved_amount: float
-    note: str
     full_name: str
 
 
-router = APIRouter()
-
-
 @router.get("/records/", response_class=JSONResponse)
-async def get_record_all(token: str = Cookie(None), db: Session = Depends(db.get_db)):
-    _ = auth.verify_token(token)
+async def get_record_all(
+    res: Response, token: str = Cookie(None), db: Session = Depends(db.get_db)
+):
+    _, token = verify_token(token)
 
     results = (
         db.query(FinancialRecord, User.full_name)
@@ -81,14 +73,18 @@ async def get_record_all(token: str = Cookie(None), db: Session = Depends(db.get
         for record, full_name in results
     ]
 
+    res.set_cookie(key="token", value=token, httponly=True)
     return {"columns": column_names, "rows": records}
 
 
-@app.post("/record/", response_class=JSONResponse)
+@router.post("/records/", response_class=JSONResponse)
 async def post_record(
-    record: RecordRequest, token: str = Cookie(None), db: Session = Depends(db.get_db)
+    res: Response,
+    record: RecordChangeSchema,
+    token: str = Cookie(None),
+    db: Session = Depends(db.get_db),
 ):
-    user_id = auth.verify_token(token)
+    user_id, token = verify_token(token)
     if record.username is not None:
         user_id = db.query(User.id).filter(User.username == record.username).first()[0]
 
@@ -114,10 +110,52 @@ async def post_record(
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+    res.set_cookie(key="token", value=token, httponly=True)
     return dict(list(record.model_dump().items())[1:3])
 
 
-@app.put("/record/", response_class=JSONResponse)
-async def update_record(token: str = Cookie(None), db: Session = Depends(db.get_db)):
-    auth.verify_token(token)
-    return
+@router.put("/records/{data_id}/", response_class=JSONResponse)
+async def update_record(
+    res: Response,
+    data_id: int,
+    record: RecordChangeSchema,
+    token: str = Cookie(None),
+    db: Session = Depends(db.get_db),
+):
+    _, token = verify_token(token)
+    new_data = record.model_dump(exclude_unset=True)
+    if record.username is not None:
+        del new_data["username"]
+        new_data["user_id"] = db.query(User.id).filter(User.username == record.username).first()[0]
+
+    db.query(FinancialRecord).filter(FinancialRecord.id == data_id).update(new_data)
+
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+    res.set_cookie(key="token", value=token, httponly=True)
+    return {"message": "Record updated successfully"}
+
+
+@router.delete("/records/{data_id}/", response_class=JSONResponse)
+async def delete_record(
+    res: Response,
+    data_id: int,
+    token: str = Cookie(None),
+    db: Session = Depends(db.get_db),
+):
+    _, token = verify_token(token)
+
+    db.query(FinancialRecord).filter(FinancialRecord.id == data_id).delete()
+
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+    res.set_cookie(key="token", value=token, httponly=True)
+    return {"message": "Record delete successfully"}

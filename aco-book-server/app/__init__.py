@@ -6,5 +6,3 @@ logging.basicConfig(
     datefmt="%Y/%m/%d %H:%M:%S",
     level=logging.INFO,
 )
-
-logging.getLogger(__name__).info(app)

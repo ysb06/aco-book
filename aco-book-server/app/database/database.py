@@ -1,5 +1,4 @@
 import enum
-from typing import List
 
 from sqlalchemy import (
     Column,
@@ -9,7 +8,6 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    Boolean,
     create_engine,
 )
 from sqlalchemy.ext.declarative import declarative_base
@@ -78,3 +76,5 @@ class FinancialRecord(Base):
 
     def get_columns():
         return [col.name for col in FinancialRecord.__table__.columns]
+
+db = Database()

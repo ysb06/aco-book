@@ -1,7 +1,6 @@
 const datetime_regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
 
 class FetchForm extends HTMLFormElement {
-    // 데이터 추가 뿐만 아니라 아이디에 따른 수정 기능도 추가
     constructor() {
         super()
         this.resultDiv = document.createElement('div');
@@ -22,10 +21,22 @@ class FetchForm extends HTMLFormElement {
         event.preventDefault();
         this.resultDiv.textContent = "[Sending...]";
 
-        const formData = new FormData(this);
         const jsonData = {};
-        formData.forEach((value, key) => {
-            if (datetime_regex.test(value)) {
+        const options = {
+            method: this.getAttribute('method'),
+            headers: {}
+        };
+        let route = this.action
+        if (!route.endsWith('/')) {
+            route += '/';
+        }
+
+        new FormData(this).forEach((value, key) => {
+            const inputElement = this.querySelector(`[name="${key}"]`);
+
+            if (inputElement.hasAttribute('url-route')) {
+                route += value + '/'
+            } else if (datetime_regex.test(value)) {
                 const date = new Date(value);
                 jsonData[key] = date.toJSON();
             } else {
@@ -35,13 +46,7 @@ class FetchForm extends HTMLFormElement {
             }
         });
 
-        const options = {
-            method: this.method,
-            headers: {}
-        };
-
-        let route = this.action
-        if (this.method.toUpperCase() === 'GET') {
+        if (options.method.toUpperCase() === 'GET') {
             const queryParams = new URLSearchParams(jsonData).toString();
             route += '?' + queryParams;
         } else {
@@ -52,12 +57,9 @@ class FetchForm extends HTMLFormElement {
         try {
             const response = await fetch(route, options);
             const data = await response.json();
-
-            const scrollTop = this.resultDiv.scrollTop;
             this.showData(response.status, response.statusText, data);
-            this.resultDiv.scrollTop = scrollTop;
         } catch (error) {
-            console.error('Error:', error);
+            console.error(error);
             this.resultDiv.textContent = `Error: ${error.message}`;
         }
     }
@@ -67,15 +69,9 @@ class FetchForm extends HTMLFormElement {
     }
 }
 
-class DataElement {
-    constructor(type) {
-        this.element = document.createElement(type)
-    }
-}
-
-class DataTable extends DataElement {
+class DataTable {
     constructor(data) {
-        super('table')
+        this.element = document.createElement('table')
 
         const thead = document.createElement('thead');
         thead.appendChild(this.generateHeader(data.columns));
@@ -103,10 +99,9 @@ class DataTable extends DataElement {
     }
 }
 
-class DataRow extends DataElement {
+class DataRow {
     constructor(row_data) {
-        super('tr');
-
+        this.element = document.createElement('tr')
         this.values = row_data.map(value => {
             const cell = document.createElement('td')
             cell.textContent = value
@@ -122,7 +117,7 @@ class FetchTableForm extends FetchForm {
         super()
         this.dataTable = null;
     }
-    
+
     showData(status, message, data) {
         if (status == 200) {
             this.dataTable = new DataTable(data);
@@ -137,3 +132,18 @@ class FetchTableForm extends FetchForm {
 
 customElements.define('fetch-form', FetchForm, { extends: 'form' });
 customElements.define('fetch-table-form', FetchTableForm, { extends: 'form' });
+
+
+
+
+function printFormMethodsAndIds() {
+    const selector = 'fetch-form, [is="fetch-form"], fetch-table-form, [is="fetch-table-form"]';
+    const forms = document.querySelectorAll(selector);
+
+    forms.forEach(form => {
+        const id = form.id || 'no id'; // id 속성 값 또는 'no id'
+        const tagName = form.tagName.toLowerCase(); // 태그 이름
+        const method = form.getAttribute('method') || 'default'; // method 속성 값 또는 기본값
+        console.log(`${tagName} (id=${id}): method=${method}`);
+    });
+}

@@ -16,23 +16,24 @@
             <li>로그인</li>
             <li>사용자 등록</li>
             <li>사용자 목록</li>
+            <li>테이블 표시</li>
             <li>데이터 추가</li>
-            <li>전체 테이블 표시</li>
-            <li>개인 테이블 표시</li>
+            <li>데이터 수정</li>
+            <li>데이터 삭제</li>
         </ol>
     </nav>
     <section>
         <article>
-            <h3>로그인</h3>
-            <form is="fetch-form" action="/token" method="post">
+            <h2>로그인</h2>
+            <form id="form-login" is="fetch-form" action="/token" method="post">
                 <input name="username" type="text" autocomplete="username" placeholder="ID" />
                 <input name="password" type="password" placeholder="Password" />
                 <input type="submit" />
             </form>
         </article>
         <article>
-            <h3>사용자 등록</h3>
-            <form is="fetch-form" action="/user" method="post">
+            <h2>사용자 등록</h2>
+            <form id="form-register" is="fetch-form" action="/users" method="post">
                 <input name="username" type="text" autocomplete="off" placeholder="ID" />
                 <input name="password" type="password" autocomplete="new-password" placeholder="Password" />
                 <input name="name" type="text" autocomplete="name" placeholder="Full Name" />
@@ -40,9 +41,15 @@
             </form>
         </article>
         <article>
-            <h3>데이터 추가</h3>
-            <form is="fetch-form" action="/record" method="post">
-                <input type="text" name="username" placeholder="User ID" />
+            <h2>테이블 표시</h2>
+            <form id="form-show-table" is="fetch-table-form" action="/records" method="get">
+                <input type="submit" />
+            </form>
+        </article>
+        <article>
+            <h2>데이터 추가</h2>
+            <form id="form-add-data" is="fetch-form" action="/records" method="post">
+                <input type="text" name="username" placeholder="User ID" autocomplete="off" />
                 <input type="text" name="category" placeholder="Category" />
                 <input type="text" name="detail" placeholder="Detail" />
                 <input type="text" name="asset" placeholder="Asset" />
@@ -54,11 +61,28 @@
             </form>
         </article>
         <article>
-            <h3>개인 테이블 표시</h3>
-            <form is="fetch-table-form" action="/record" method="get">
+            <h2>데이터 수정</h2>
+            <form id="form-update-data" is="fetch-form" action="/records" method="put">
+                <input type="text" name="data_id" placeholder="Data ID" url-route />
+                <input type="text" name="username" placeholder="User ID" autocomplete="off" />
+                <input type="text" name="category" placeholder="Category" />
+                <input type="text" name="detail" placeholder="Detail" />
+                <input type="text" name="asset" placeholder="Asset" />
+                <input type="number" name="payment_amount" placeholder="Amount" />
+                <input type="text" name="currency" placeholder="Currency" value="KRW" />
+                <input type="number" name="approved_amount" value="0" placeholder="Approved Amount" />
+                <input type="text" name="note" placeholder="Note" />
                 <input type="submit" />
             </form>
         </article>
+        <article>
+            <h2>데이터 삭제</h2>
+            <form id="form-delete-data" is="fetch-form" action="/records" method="delete">
+                <input type="text" name="data_id" placeholder="Data ID" url-route />
+                <input type="submit" />
+            </form>
+        </article>
+
     </section>
     <footer></footer>
     <script src="{{ url_for('static', path='/index.js') }}"></script>

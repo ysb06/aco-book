@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from sqlalchemy.exc import IntegrityError
 
-from app.database import User
-from auth import hash_password
+from app.database import User, db
+from app.auth import hash_password
 
 
 class UserRequest(BaseModel):
@@ -22,7 +22,7 @@ router = APIRouter()
 
 
 @router.get("/users/", tags=["users"])
-async def read_users():
+async def get_users_info():
     return [{"username": "Rick"}, {"username": "Morty"}]
 
 
@@ -43,5 +43,5 @@ async def signup_user(user_data: UserSignUpRequest, db: Session = Depends(db.get
 
 
 @router.get("/users/{username}", tags=["users"])
-async def read_user(username: str):
+async def get_user_info(username: str):
     return {"username": username}
