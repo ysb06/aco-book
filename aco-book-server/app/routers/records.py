@@ -52,7 +52,7 @@ class RecordResponseSchema(RecordBaseSchema):
     full_name: str
 
 
-@router.get("/records/", response_class=JSONResponse)
+@router.get("/records/", tags=["records"], response_class=JSONResponse)
 async def get_record_all(
     res: Response, token: str = Cookie(None), db: Session = Depends(db.get_db)
 ):
@@ -77,8 +77,8 @@ async def get_record_all(
     return {"columns": column_names, "rows": records}
 
 
-@router.post("/records/", response_class=JSONResponse)
-async def post_record(
+@router.post("/records/", tags=["records"], response_class=JSONResponse)
+async def add_record(
     res: Response,
     record: RecordChangeSchema,
     token: str = Cookie(None),
@@ -114,7 +114,7 @@ async def post_record(
     return dict(list(record.model_dump().items())[1:3])
 
 
-@router.put("/records/{data_id}/", response_class=JSONResponse)
+@router.put("/records/{data_id}/", tags=["records"], response_class=JSONResponse)
 async def update_record(
     res: Response,
     data_id: int,
@@ -140,7 +140,7 @@ async def update_record(
     return {"message": "Record updated successfully"}
 
 
-@router.delete("/records/{data_id}/", response_class=JSONResponse)
+@router.delete("/records/{data_id}/", tags=["records"], response_class=JSONResponse)
 async def delete_record(
     res: Response,
     data_id: int,

@@ -32,5 +32,5 @@ app.include_router(records.router)
 
 
 @app.get("/", response_class=HTMLResponse)
-def get_root(request: Request):
+def get_prototype_page(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})

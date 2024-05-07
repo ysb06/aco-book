@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "aco-book-server"
+		},
+		{
+			"path": "aco-book-frontend"
 		}
 	],
 	"settings": {}

@@ -171,3 +171,6 @@ dmypy.json
 *.db
 
 aco-book-server/requirements.txt
+
+# Temporary frontend disabled
+/aco-book-frontend

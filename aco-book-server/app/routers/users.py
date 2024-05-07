@@ -15,6 +15,7 @@ class UserRequest(BaseModel):
 
 
 class UserSignUpRequest(UserRequest):
+    email: str
     name: str
 
 
@@ -31,6 +32,7 @@ async def signup_user(user_data: UserSignUpRequest, db: Session = Depends(db.get
     new_user = User(
         username=user_data.username,
         password=hash_password(user_data.password),
+        email=user_data.email,
         full_name=user_data.name,
     )
     db.add(new_user)

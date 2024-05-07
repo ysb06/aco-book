@@ -6,15 +6,19 @@
     "configurations": [
         {
             "name": "Run Server",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
+            "cwd": "${workspaceFolder}/aco-book-server",
             "module": "uvicorn",
             "console": "integratedTerminal",
-            "args": ["app:app", "--reload"]
+            "args": [
+                "app:app",
+                "--reload"
+            ],
         },
         {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
