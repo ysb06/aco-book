@@ -7,7 +7,7 @@
 			"path": "aco-book-server"
 		},
 		{
-			"path": "aco-book-frontend"
+			"path": "aco-book-web"
 		}
 	],
 	"settings": {}
