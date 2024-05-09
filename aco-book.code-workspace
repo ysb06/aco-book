@@ -10,5 +10,10 @@
 			"path": "aco-book-web"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"[typescriptreact]": {
+			"editor.tabSize": 2
+		},
+		"editor.detectIndentation": false,
+	}
 }

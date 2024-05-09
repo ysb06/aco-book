@@ -8,7 +8,7 @@
             "name": "Run Server",
             "type": "debugpy",
             "request": "launch",
-            "cwd": "${workspaceFolder}/aco-book-server",
+            "cwd": "${workspaceFolder}",
             "module": "uvicorn",
             "console": "integratedTerminal",
             "args": [

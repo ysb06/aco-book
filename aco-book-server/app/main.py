@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 
 from .database import db
 from .routers import users, token, records
@@ -29,6 +30,15 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(users.router)
 app.include_router(token.router)
 app.include_router(records.router)
+
+# 모든 출처 허용
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 특정 도메인으로 제한 가능
+    allow_credentials=True,
+    allow_methods=["*"],  # 특정 HTTP 메소드로 제한 가능
+    allow_headers=["*"],
+)
 
 
 @app.get("/", response_class=HTMLResponse)
