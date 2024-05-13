@@ -17,6 +17,7 @@ class UserRequest(BaseModel):
 class UserSignUpRequest(UserRequest):
     email: str
     name: str
+    nickname: str
 
 
 router = APIRouter()
@@ -34,6 +35,7 @@ async def signup_user(user_data: UserSignUpRequest, db: Session = Depends(db.get
         password=hash_password(user_data.password),
         email=user_data.email,
         full_name=user_data.name,
+        nickname=user_data.nickname,
     )
     db.add(new_user)
     try:
@@ -41,7 +43,7 @@ async def signup_user(user_data: UserSignUpRequest, db: Session = Depends(db.get
     except IntegrityError:
         raise HTTPException(status_code=409, detail="Username already exists")
     db.refresh(new_user)
-    return {"SignUp": "Complete"}
+    return {"Result": "Complete"}
 
 
 @router.get("/users/{username}", tags=["users"])

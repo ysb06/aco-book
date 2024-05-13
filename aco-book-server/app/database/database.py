@@ -55,6 +55,7 @@ class User(Base):
     password = Column(String)
     email = Column(String, unique=True)
     full_name = Column(String)
+    nickname = Column(String)
 
 
 class FinancialRecord(Base):

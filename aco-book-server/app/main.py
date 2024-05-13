@@ -34,10 +34,22 @@ app.include_router(records.router)
 # 모든 출처 허용
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 특정 도메인으로 제한 가능
+    allow_origins=["http://localhost:3000"],  # 특정 도메인으로 제한 가능
     allow_credentials=True,
-    allow_methods=["*"],  # 특정 HTTP 메소드로 제한 가능
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "HEAD", "OPTIONS"],
+    allow_headers=[
+        "Access-Control-Allow-Headers",
+        "Content-Type",
+        "Authorization",
+        "Content-Length",
+        "X-CSRF-Token",
+        "X-Requested-With",
+        "Accept",
+        "Accept-Version",
+        "Content-MD5",
+        "Date",
+        "X-Api-Version",
+    ],
 )
 
 

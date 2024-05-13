@@ -79,7 +79,7 @@ export function SumbitButton({ id, children }: SubmitButtonProps) {
   );
 }
 
-export function UsernameInput({
+export function UsernameField({
   id,
   onStateChange = () => {},
   required = true,
@@ -92,14 +92,14 @@ export function UsernameInput({
       inputType="text"
       labelText="User ID"
       autocomplete={autocomplete}
-      placeholder="Enter your user ID..."
+      placeholder="Enter your username..."
       onStateChange={onStateChange}
       required={required}
     />
   );
 }
 
-export function PasswordInput({
+export function PasswordField({
   id,
   onStateChange = () => {},
   required = true,
@@ -132,6 +132,44 @@ export function NameField({
       labelText="Name"
       autocomplete="name"
       placeholder="Enter your name..."
+      onStateChange={onStateChange}
+      required={required}
+    />
+  );
+}
+
+export function NicknameField({
+  id,
+  onStateChange = () => {},
+  required = true,
+}: InputFieldPropsBase) {
+  return (
+    <FieldElement
+      id={id}
+      fieldName="nickname"
+      inputType="text"
+      labelText="Nickname"
+      autocomplete="nickname"
+      placeholder="Enter your nickname..."
+      onStateChange={onStateChange}
+      required={required}
+    />
+  );
+}
+
+export function EMailField({
+  id,
+  onStateChange = () => {},
+  required = true,
+}: InputFieldPropsBase) {
+  return (
+    <FieldElement
+      id={id}
+      fieldName="email"
+      inputType="text"
+      labelText="E-Mail"
+      autocomplete="email"
+      placeholder="Enter your E-Mail Address..."
       onStateChange={onStateChange}
       required={required}
     />

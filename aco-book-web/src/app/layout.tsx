@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Image from "next/image";
+import NavBar from "components/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,7 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <header className="flex justify-center">
+        <header className="flex justify-center items-center p-4 bg-white dark:bg-gray-800 shadow-md">
           <Image
             src="/vercel.svg"
             alt="Vercel Logo"
@@ -24,18 +25,12 @@ export default function RootLayout({
             width={100}
             height={24}
             priority
+            style={{ width: 100, height: 24 }}
           />
-          <nav>
-            <ul className="flex justify-center">
-              <li>Asset Overview</li>
-              <li>Regular Cashflow</li>
-              <li>Deposits</li>
-              <li>Policy for Asset</li>
-            </ul>
-          </nav>
+          <NavBar />
         </header>
         {children}
-        <footer></footer>
+        <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800"></footer>
       </body>
     </html>
   );
