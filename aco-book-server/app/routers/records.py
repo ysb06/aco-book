@@ -27,7 +27,7 @@ class RecordBaseSchema(BaseModel):
     @validator("date", pre=True, always=True)
     def parse_date(cls, val):
         if isinstance(val, int):
-            return datetime.utcfromtimestamp(val).astimezone(tz=timezone.utc)
+            return datetime.fromtimestamp(val, timezone.utc)
 
         if isinstance(val, str):
             try:

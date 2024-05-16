@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Image from "next/image";
 import NavBar from "components/navigation";
+import { SimpleLoginStatus } from "components/account/status";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <header className="flex justify-center items-center p-4 bg-white dark:bg-gray-800 shadow-md">
+        <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md">
           <Image
             src="/vercel.svg"
             alt="Vercel Logo"
@@ -28,6 +29,7 @@ export default function RootLayout({
             style={{ width: 100, height: 24 }}
           />
           <NavBar />
+          <SimpleLoginStatus />
         </header>
         {children}
         <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800"></footer>

@@ -6,22 +6,22 @@ import {
   NameField,
   NicknameField,
   PasswordField,
-  SumbitButton,
+  SubmitButton,
   UsernameField,
 } from "./input";
 import { useRouter } from "next/navigation";
-import { generateFormRequest } from "libraries/requests";
+import { generateFormRequest } from "libraries/requests/client";
+import { cookies } from "next/headers";
 
 interface AccountFormProps {
   id?: string;
   redirectRoute?: string;
-  setSuccess?: Dispatch<SetStateAction<boolean>>;
+  // setSuccess?: Dispatch<SetStateAction<boolean>>;
 }
 
 export function LoginForm({
   id = "login-form",
   redirectRoute = "/",
-  setSuccess,
 }: AccountFormProps) {
   const router = useRouter();
 
@@ -29,15 +29,10 @@ export function LoginForm({
     event.preventDefault();
     const serverAddress = process.env.NEXT_PUBLIC_SERVER_ADDRESS;
     const requestJSON = generateFormRequest(event.currentTarget);
-    const response = await fetch(serverAddress + "/token", requestJSON);
-
+    const response = await fetch(serverAddress + "token/", requestJSON);
     if (response.ok) {
-      const responseJSON = await response.json();
-      if (setSuccess) {
-        setSuccess(true);
-      } else {
-        router.push(redirectRoute);
-      }
+      router.push(redirectRoute);
+      router.refresh();
     } else {
       console.log("Error with status:", response.status);
     }
@@ -51,7 +46,7 @@ export function LoginForm({
       <form onSubmit={handleSubmitButton}>
         <UsernameField id="login-id" />
         <PasswordField id="login-password" />
-        <SumbitButton id="login-submit">Login</SumbitButton>
+        <SubmitButton id="login-submit">Login</SubmitButton>
       </form>
     </div>
   );
@@ -59,23 +54,18 @@ export function LoginForm({
 
 export function SignUpForm({
   id = "signup-form",
-  redirectRoute = "/account/login",
-  setSuccess,
+  redirectRoute = "/account/login/",
 }: AccountFormProps) {
   const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const serverAddress = process.env.NEXT_PUBLIC_SERVER_ADDRESS;
     const requestJSON = generateFormRequest(event.currentTarget);
-    const response = await fetch(serverAddress + "/users", requestJSON);
+    const response = await fetch(serverAddress + "users/", requestJSON);
     if (response.ok) {
-      if (setSuccess) {
-        setSuccess(true);
-      } else {
-        router.push(redirectRoute);
-      }
+      router.push(redirectRoute);
+      router.refresh();
     } else {
       console.log("Error with status:", response.status);
     }
@@ -92,7 +82,7 @@ export function SignUpForm({
         <EMailField id={id + "-email"} />
         <NameField id={id + "-name"} />
         <NicknameField id={id + "-nickname"} />
-        <SumbitButton id={id + "-submit"}>Sign Up</SumbitButton>
+        <SubmitButton id={id + "-submit"}>Sign Up</SubmitButton>
       </form>
     </div>
   );

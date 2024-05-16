@@ -11,10 +11,10 @@ export default function Home() {
           <li className="mx-2">
             <div className="text-xl font-bold">계정 및 그룹</div>
             <ul>
-              <LinkList href="/account/register">회원가입</LinkList>
-              <LinkList href="/account/login">로그인</LinkList>
+              <LinkList href="/account/register/">회원가입</LinkList>
+              <LinkList href="/account/login/">로그인</LinkList>
               <li className="text-gray-500">프로필</li>
-              <li className="text-gray-500">그룹 목록</li>
+              <LinkList href="/group/">그룹 목록</LinkList>
               <li className="text-gray-500">그룹 생성</li>
               <li className="text-gray-500">그룹 관리 (맴버 설정)</li>
             </ul>

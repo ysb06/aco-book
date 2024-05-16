@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Boolean,
     create_engine,
 )
 from sqlalchemy.ext.declarative import declarative_base
@@ -52,10 +53,56 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     username = Column(String, unique=True, index=True)
-    password = Column(String)
+    password = Column(String, index=True)
     email = Column(String, unique=True)
     full_name = Column(String)
     nickname = Column(String)
+
+
+class UserGroup(Base):
+    __tablename__ = "user_groups"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+
+
+class UserGroupRelation(Base):
+    __tablename__ = "user_group_relations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("user_groups.id"), nullable=False)
+    admin = Column(Boolean, default=False)
+    approved = Column(Boolean, default=False)
+
+    user = relationship("User")
+    group = relationship("UserGroup")
+
+
+class Asset(Base):
+    __tablename__ = "assets"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    owner_group_id = Column(Integer, ForeignKey("user_groups.id"), nullable=False)
+    name = Column(String)
+    asset_type = Column(String)
+    currency = Column(Enum(Currency))
+
+    group = relationship("UserGroup")
+
+
+class AssetRecord(Base):
+    __tablename__ = "asset_records"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    asset_id = Column(Integer, ForeignKey("assets.id"), nullable=False)
+    date = Column(DateTime, nullable=False)
+    category = Column(String)
+    payment_amount = Column(Float, nullable=False)
+    currency = Column(Enum(Currency))
+    approved_amount = Column(Float)
+
+    asset = relationship("Asset")
 
 
 class FinancialRecord(Base):
@@ -78,5 +125,6 @@ class FinancialRecord(Base):
 
     def get_columns():
         return [col.name for col in FinancialRecord.__table__.columns]
+
 
 db = Database()

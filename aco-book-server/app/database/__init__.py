@@ -1,4 +1,4 @@
-from app.database.database import db, User, Currency, FinancialRecord
+from app.database.database import db, User, Currency, FinancialRecord, UserGroup, UserGroupRelation
 
 db
 User

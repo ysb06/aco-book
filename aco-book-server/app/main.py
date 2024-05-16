@@ -8,6 +8,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routers import groups
+
 from .database import db
 from .routers import users, token, records
 
@@ -30,8 +32,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(users.router)
 app.include_router(token.router)
 app.include_router(records.router)
+app.include_router(groups.router)
 
 # 모든 출처 허용
+# Todo: 추후 외부 서버 개발 시, CORS 설정 삭제 또는 수정 필요
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # 특정 도메인으로 제한 가능

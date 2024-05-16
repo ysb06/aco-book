@@ -1,7 +1,10 @@
+import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
+
 export function generateFormRequest(
   raw: HTMLFormElement,
   method: string = "POST",
-  includeCredentials: boolean = true
+  includeCredentials: boolean = true,
+  cookie: RequestCookie | undefined = undefined
 ) {
   const formData = new FormData(raw);
   const reqBody: { [key: string]: string } = {};
@@ -11,7 +14,12 @@ export function generateFormRequest(
 
   const req: RequestInit = {
     method: method,
-    headers: { "Content-Type": "application/json" },
+    headers: cookie
+      ? {
+          "Content-Type": "application/json",
+          Cookie: cookie?.name + "=" + cookie?.value,
+        }
+      : { "Content-Type": "application/json" },
     body: JSON.stringify(reqBody),
   };
 
@@ -23,14 +31,19 @@ export function generateFormRequest(
 }
 
 export function generateRequest(
-  requestBody: { [key: string]: string } = {},
   method: string = "POST",
+  requestBody: { [key: string]: string } = {},
   includeCredentials: boolean = true,
-  cookie: string,
+  cookie: RequestCookie | undefined = undefined
 ) {
   const req: RequestInit = {
     method: method,
-    headers: { "Content-Type": "application/json", "Cookie": cookie },
+    headers: cookie
+      ? {
+          "Content-Type": "application/json",
+          Cookie: cookie?.name + "=" + cookie?.value,
+        }
+      : { "Content-Type": "application/json" },
   };
 
   if (method !== "GET") {
@@ -40,6 +53,5 @@ export function generateRequest(
   if (includeCredentials) {
     req.credentials = "include";
   }
-
   return req;
 }

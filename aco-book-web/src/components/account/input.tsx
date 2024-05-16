@@ -46,6 +46,7 @@ export default function FieldElement({
       <label
         htmlFor={id}
         className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+        id={`${id}-label`}
       >
         {labelText}
       </label>
@@ -62,12 +63,13 @@ export default function FieldElement({
           onStateChange(e.target.value);
         }}
         required={required}
+        aria-labelledby={`${id}-label`}
       />
     </div>
   );
 }
 
-export function SumbitButton({ id, children }: SubmitButtonProps) {
+export function SubmitButton({ id, children }: SubmitButtonProps) {
   return (
     <button
       id={id}

@@ -3,6 +3,7 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Todo: 현재는 로컬 개발이지만 추후 외부 서버를 고려하여 아래 내용을 삭제 또는 수정해야 함
         // matching all API routes
         source: "/:path*",
         headers: [

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 import jwt
 from datetime import datetime, timezone, timedelta
 import hashlib
@@ -26,7 +26,7 @@ def generate_token(user_id: int):
     return token
 
 
-def verify_token(token: str) -> Tuple[int, str]:
+def verify_token(token: Optional[str]) -> int:
     user_id = -1
     if token is None:
         raise VerificationFailedError("No Token")
@@ -39,7 +39,7 @@ def verify_token(token: str) -> Tuple[int, str]:
     except jwt.ExpiredSignatureError:
         raise VerificationFailedError("Token expired")
 
-    return user_id, token
+    return user_id
 
 
 def hash_password(password: str) -> str:

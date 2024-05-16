@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Cookie, Depends, Request, Response
 from sqlalchemy.orm import Session
@@ -5,18 +6,14 @@ from sqlalchemy.orm import Session
 from ..database import User, db
 from ..auth import hash_password, generate_token, verify_token
 from .users import UserRequest
+import urllib.parse
 
 router = APIRouter()
 
 @router.get("/token/")
-async def check_token(res: Response, token: str = Cookie(None)):
-    print("Check token...")
-    print(res.headers.raw)
-    print(token)
-    _, token = verify_token(token)
-
-    res.set_cookie(key="token", value=token, samesite='none', secure=True)
-    return {"Result": "OK"}
+async def check_token(token: str = Cookie(None)):
+    verify_token(token)
+    return {"state": "valid"}
 
 
 @router.post("/token/")
@@ -35,6 +32,12 @@ async def get_login_token(
 
     token = generate_token(result[0])
     # res.set_cookie(key="token", value=token, httponly=True)
+    # Todo: 추후 서버를 외부 서버로 배포할 때, samesite='none' 부분을 수정해야 함.
+    info = {"nickname": result[2]}
+    json_info = json.dumps(info)
+    encoded_info = urllib.parse.quote(json_info)
+    
     res.set_cookie(key="token", value=token, samesite='none', secure=True)
+    res.set_cookie(key="userinfo", value=encoded_info, samesite='none', secure=True)
 
-    return {"nickname": result[2]}
+    return {"state": "success"}
