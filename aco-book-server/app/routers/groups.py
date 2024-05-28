@@ -41,12 +41,15 @@ async def create_group(
     user_id = verify_token(token)
 
     group = UserGroup(name=group_info.name)
+    db.add(group)
+    db.commit()
+
     relation = UserGroupRelation(
         user_id=user_id, group_id=group.id, admin=True, approved=True
     )
-    db.add(group)
     db.add(relation)
     db.commit()
+
     db.refresh(group)
     db.refresh(relation)
 

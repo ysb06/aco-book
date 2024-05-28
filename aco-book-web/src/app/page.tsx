@@ -1,5 +1,5 @@
-import { LoginStatus } from "components/account/status";
-import { LinkList } from "components/utils";
+import { LoginStatus } from "components/server/account/status";
+import { LinkList } from "components/server/utils";
 
 
 export default function Home() {

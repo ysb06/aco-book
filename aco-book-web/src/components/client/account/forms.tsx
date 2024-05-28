@@ -1,6 +1,6 @@
 "use client";
 
-import { Dispatch, FormEvent, SetStateAction, useState } from "react";
+import { FormEvent } from "react";
 import {
   EMailField,
   NameField,
@@ -11,7 +11,6 @@ import {
 } from "./input";
 import { useRouter } from "next/navigation";
 import { generateFormRequest } from "libraries/requests/client";
-import { cookies } from "next/headers";
 
 interface AccountFormProps {
   id?: string;

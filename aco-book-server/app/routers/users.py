@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from sqlalchemy.exc import IntegrityError
 
-from app.database import User, db
+from app.database import User, db, UserGroup, UserGroupRelation
 from app.auth import hash_password
 
 
@@ -43,6 +43,22 @@ async def signup_user(user_data: UserSignUpRequest, db: Session = Depends(db.get
     except IntegrityError:
         raise HTTPException(status_code=409, detail="Username already exists")
     db.refresh(new_user)
+
+    # Make base group for new user
+    group = UserGroup(name=f"personal_{new_user.username}")
+    db.add(group)
+    db.commit()
+
+    relation = UserGroupRelation(
+        user_id=new_user.id, group_id=group.id, admin=True, approved=True
+    )
+    db.add(relation)
+    db.commit()
+    
+    db.refresh(group)
+    db.refresh(relation)
+
+
     return {"Result": "Complete"}
 
 
