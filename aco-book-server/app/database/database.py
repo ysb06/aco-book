@@ -63,7 +63,10 @@ class UserGroup(Base):
     __tablename__ = "user_groups"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String)
+    name = Column(String, unique=True)
+    admin = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    user = relationship("User")
 
 
 class UserGroupRelation(Base):
@@ -72,7 +75,6 @@ class UserGroupRelation(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     group_id = Column(Integer, ForeignKey("user_groups.id"), nullable=False)
-    admin = Column(Boolean, default=False)
     approved = Column(Boolean, default=False)
 
     user = relationship("User")

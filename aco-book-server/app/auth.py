@@ -16,7 +16,7 @@ def generate_token(user_id: int):
         {
             "iss": "aco",
             "iat": current_dt,
-            "exp": current_dt + timedelta(minutes=10),
+            "exp": current_dt + timedelta(minutes=30),
             "user_id": user_id,
         },
         "ms_key",

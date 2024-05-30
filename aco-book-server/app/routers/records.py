@@ -140,6 +140,7 @@ async def update_record(
     return {"message": "Record updated successfully"}
 
 
+# Todo: 추후 구현하기
 @router.delete("/records/{data_id}/", tags=["records"], response_class=JSONResponse)
 async def delete_record(
     res: Response,

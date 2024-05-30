@@ -40,7 +40,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # 특정 도메인으로 제한 가능
     allow_credentials=True,
-    allow_methods=["GET", "POST", "HEAD", "OPTIONS"],
+    allow_methods=["GET", "POST", "UPDATE", "DELETE", "HEAD", "OPTIONS"],
     allow_headers=[
         "Access-Control-Allow-Headers",
         "Content-Type",

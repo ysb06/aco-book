@@ -8,9 +8,9 @@ import {
   PasswordField,
   SubmitButton,
   UsernameField,
-} from "./input";
+} from "../form";
 import { useRouter } from "next/navigation";
-import { generateFormRequest } from "libraries/requests/client";
+import { sendFormRequest } from "libraries/client/requests";
 
 interface AccountFormProps {
   id?: string;
@@ -26,9 +26,7 @@ export function LoginForm({
 
   const handleSubmitButton = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const serverAddress = process.env.NEXT_PUBLIC_SERVER_ADDRESS;
-    const requestJSON = generateFormRequest(event.currentTarget);
-    const response = await fetch(serverAddress + "token/", requestJSON);
+    const response = await sendFormRequest("token/", event.currentTarget)
     if (response.ok) {
       router.push(redirectRoute);
       router.refresh();
@@ -59,9 +57,7 @@ export function SignUpForm({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const serverAddress = process.env.NEXT_PUBLIC_SERVER_ADDRESS;
-    const requestJSON = generateFormRequest(event.currentTarget);
-    const response = await fetch(serverAddress + "users/", requestJSON);
+    const response = await sendFormRequest("users/", event.currentTarget);
     if (response.ok) {
       router.push(redirectRoute);
       router.refresh();

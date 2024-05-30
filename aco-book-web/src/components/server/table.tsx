@@ -1,5 +1,3 @@
-import { FormEvent } from "react";
-
 type CellValue = string | number;
 type Row = CellValue[];
 type ColumnData = Row[];
@@ -87,7 +85,6 @@ export function EditableDataTable({ data }: DataTableProps) {
           ))}
         </tbody>
       </table>
-      
     </div>
   );
 }

@@ -45,12 +45,12 @@ async def signup_user(user_data: UserSignUpRequest, db: Session = Depends(db.get
     db.refresh(new_user)
 
     # Make base group for new user
-    group = UserGroup(name=f"personal_{new_user.username}")
+    group = UserGroup(name=f"default_{new_user.username}", admin=new_user.id)
     db.add(group)
     db.commit()
 
     relation = UserGroupRelation(
-        user_id=new_user.id, group_id=group.id, admin=True, approved=True
+        user_id=new_user.id, group_id=group.id, approved=True
     )
     db.add(relation)
     db.commit()

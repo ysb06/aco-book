@@ -14,9 +14,9 @@ export default function Home() {
               <LinkList href="/account/register/">회원가입</LinkList>
               <LinkList href="/account/login/">로그인</LinkList>
               <li className="text-gray-500">프로필</li>
-              <LinkList href="/group/">그룹 목록</LinkList>
-              <li className="text-gray-500">그룹 생성</li>
-              <li className="text-gray-500">그룹 관리 (맴버 설정)</li>
+              <LinkList href="/group/">그룹 목록, 생성 및 삭제</LinkList>
+              <li className="text-gray-500">그룹 가입</li>
+              <li className="text-gray-500">그룹 가입 승인</li>
             </ul>
           </li>
           <li className="mx-2">

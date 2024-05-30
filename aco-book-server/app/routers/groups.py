@@ -1,10 +1,11 @@
+from typing import List
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from app.utils import convert_general_format
+from app.utils import convert_general_format, generate_standard_response
 
 from ..auth import verify_token
 from ..database import Currency, FinancialRecord, User, UserGroup, UserGroupRelation, db
@@ -14,6 +15,9 @@ router = APIRouter()
 
 class GroupSchema(BaseModel):
     name: str
+
+class DeleteGroupSchema(BaseModel):
+    id: List[int]
 
 
 @router.get("/groups/", tags=["groups"], response_class=JSONResponse)
@@ -27,11 +31,8 @@ async def get_all_groups(token: str = Cookie(None), db: Session = Depends(db.get
         .all()
     )
 
-    response_body = {
-        "data": convert_general_format(groups),
-    }
-
-    return response_body
+    result = generate_standard_response(groups)
+    return result
 
 
 @router.post("/groups/", tags=["groups"], response_class=JSONResponse)
@@ -40,12 +41,12 @@ async def create_group(
 ):
     user_id = verify_token(token)
 
-    group = UserGroup(name=group_info.name)
+    group = UserGroup(name=group_info.name, admin=user_id)
     db.add(group)
     db.commit()
 
     relation = UserGroupRelation(
-        user_id=user_id, group_id=group.id, admin=True, approved=True
+        user_id=user_id, group_id=group.id, approved=True
     )
     db.add(relation)
     db.commit()
@@ -55,6 +56,24 @@ async def create_group(
 
     return {"result": "OK"}
 
+
+@router.delete("/groups/", tags=["groups"], response_class=JSONResponse)
+async def delete_group(targets: DeleteGroupSchema, token: str = Cookie(None), db: Session = Depends(db.get_db)):
+    user_id = verify_token(token)
+
+    groups = db.query(UserGroup).filter(UserGroup.id.in_(targets.id)).all()
+    if not groups:
+        raise HTTPException(status_code=400, detail="No groups found")
+    
+    for group in groups:
+        if group.admin != user_id:
+            raise HTTPException(status_code=403, detail=f"You do not have permission to delete the group: {group.name}")
+
+    db.query(UserGroupRelation).filter(UserGroupRelation.group_id.in_(targets.id)).delete(synchronize_session=False)
+    db.query(UserGroup).filter(UserGroup.id.in_(targets.id)).delete(synchronize_session=False)
+    db.commit()
+    
+    return JSONResponse(content={"result": "OK"})
 
 @router.get("/groups/{group_id}/members", tags=["groups"], response_class=JSONResponse)
 async def get_group_users_info(
