@@ -1,8 +1,8 @@
 export async function sendRequest(
   route: string,
-  requestBody: object,
   method: string = "POST",
-  cookie: string | undefined = undefined
+  cookie: string | undefined = undefined,
+  requestBody: object,
 ) {
   const url = new URL(route, process.env.NEXT_PUBLIC_SERVER_ADDRESS);
   const headers: { "Content-Type": string; Cookie?: string } = {
@@ -11,13 +11,10 @@ export async function sendRequest(
   const requestRaw: RequestInit = {
     method: method,
     headers: headers,
+    credentials: "include",
   };
   if (cookie) {
     headers["Cookie"] = cookie;
-  }
-  // token === credentials
-  if (headers["Cookie"] && headers["Cookie"].includes("token")) {
-    requestRaw["credentials"] = "include";
   }
 
   if (method !== "GET") {

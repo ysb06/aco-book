@@ -1,7 +1,9 @@
 fastapi[all]; sys_platform != 'win32'
-sqlalchemy
-pyjwt
-
 fastapi; sys_platform == 'win32'
 uvicorn[standard]; sys_platform == 'win32'
 jinja2; sys_platform == 'win32'
+
+sqlalchemy
+pyjwt
+pandas
+openpyxl

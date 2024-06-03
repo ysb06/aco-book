@@ -1,17 +1,18 @@
 import { sendRequest } from "libraries/requests";
+
 async function sendClientRequest(
   route: string,
+  method: string = "POST",
   requestBody: object,
-  method: string = "POST"
 ) {
-  const result = sendRequest(route, requestBody, method, document.cookie);
+  const result = sendRequest(route, method, document.cookie, requestBody);
   return result;
 }
 
 export async function sendFormRequest(
   route: string,
+  method: string = "POST",
   raw: HTMLFormElement,
-  method: string = "POST"
 ) {
   const formData = new FormData(raw);
   const requestBody: { [key: string]: string } = {};
@@ -19,21 +20,21 @@ export async function sendFormRequest(
     requestBody[key] = value.toString();
   });
 
-  return await sendClientRequest(route, requestBody, method);
+  return await sendClientRequest(route, method, requestBody);
 }
 
 export async function sendIdsRequest(
   route: string,
+  method: string = "DELETE",
   ids: Set<number>,
-  method: string = "DELETE"
 ) {
-  return await sendClientRequest(route, { id: Array.from(ids) }, method);
+  return await sendClientRequest(route, method, { id: Array.from(ids) });
 }
 
 export async function sendObjectRequest(
   route: string,
-  object: { [key: string]: number | string },
-  method: string = "POST"
+  method: string = "POST",
+  object: { [key: string]: number | string } = {},
 ) {
-  return await sendClientRequest(route, object, method);
+  return await sendClientRequest(route, method, object);
 }

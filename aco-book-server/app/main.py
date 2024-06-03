@@ -8,12 +8,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import groups
-
 from .database import db
-from .routers import users, token, records
+from .routers import users, token, assets, groups, records
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
+logger.setLevel(logging.DEBUG)
 
 
 templates = Jinja2Templates(directory="templates")
@@ -27,12 +26,13 @@ async def lifespan(_: FastAPI):
     db.dispose()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, logger=logger, debug=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(users.router)
 app.include_router(token.router)
-app.include_router(records.router)
 app.include_router(groups.router)
+app.include_router(assets.router)
+app.include_router(records.router)
 
 # 모든 출처 허용
 # Todo: 추후 외부 서버 개발 시, CORS 설정 삭제 또는 수정 필요

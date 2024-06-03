@@ -24,6 +24,18 @@ class Currency(enum.Enum):
     JPY = "JPY"
 
 
+class AssetType(enum.Enum):
+    CASH = "Cash"
+    CHECKING_ACCOUNT = "Checking Account"
+    SAVINGS_ACCOUNT = "Savings Account"
+    SECURITIES = "Securities"
+    INVESTMENT_ACCOUNT = "Investment Account"
+    REAL_ESTATE = "Real Estate"
+    PENSION = "Pension"
+    INSURANCE = "Insurance"
+    OTHER_ASSETS = "Other Assets"
+
+
 class Database:
     def __init__(self) -> None:
         self.engine = create_engine(
@@ -87,7 +99,7 @@ class Asset(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     owner_group_id = Column(Integer, ForeignKey("user_groups.id"), nullable=False)
     name = Column(String)
-    asset_type = Column(String)
+    asset_type = Column(Enum(AssetType))
     currency = Column(Enum(Currency))
 
     group = relationship("UserGroup")

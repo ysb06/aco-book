@@ -6,7 +6,7 @@ interface LoginStatusProps {
 }
 
 export async function SimpleLoginStatus({ url = "token/" }: LoginStatusProps) {
-  const response = await sendObjectRequest(url, {}, "GET");
+  const response = await sendObjectRequest(url, "GET");
 
   return (
     <p className="text-gray-700 dark:text-gray-300 text-sm">
@@ -16,7 +16,7 @@ export async function SimpleLoginStatus({ url = "token/" }: LoginStatusProps) {
 }
 
 export async function LoginStatus({ url = "token/" }: LoginStatusProps) {
-  const response = await sendObjectRequest(url, {}, "GET");
+  const response = await sendObjectRequest(url, "GET");
 
   return (
     <div className="flex items-center justify-center">

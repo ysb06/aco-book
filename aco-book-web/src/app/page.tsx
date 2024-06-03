@@ -1,9 +1,9 @@
 import { LoginStatus } from "components/server/account/status";
 import { LinkList } from "components/server/utils";
+import { cookies } from "next/headers";
 
 
-export default function Home() {
-  
+export default function Home() {  
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <nav className="ml-4">
@@ -14,7 +14,7 @@ export default function Home() {
               <LinkList href="/account/register/">회원가입</LinkList>
               <LinkList href="/account/login/">로그인</LinkList>
               <li className="text-gray-500">프로필</li>
-              <LinkList href="/group/">그룹 목록, 생성 및 삭제</LinkList>
+              <LinkList href="/group/">그룹 관리</LinkList>
               <li className="text-gray-500">그룹 가입</li>
               <li className="text-gray-500">그룹 가입 승인</li>
             </ul>
@@ -22,9 +22,8 @@ export default function Home() {
           <li className="mx-2">
             <div className="text-xl font-bold">자산</div>
             <ul>
-              <li className="text-gray-500">자산 목록</li>
-              <li className="text-gray-500">자산 생성</li>
-              <li className="text-gray-500">자산 관리 (수정, 삭제)</li>
+              <LinkList href="/asset/">자산 관리</LinkList>
+              <LinkList href="/record">자산 기록</LinkList>
             </ul>
           </li>
         </ul>

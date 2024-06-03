@@ -10,19 +10,19 @@ class VerificationFailedError(HTTPException):
         super().__init__(401, text)
 
 
-def generate_token(user_id: int):
+def generate_token(user_id: int, expire_time: int = 60) -> str:
     current_dt = datetime.now(tz=timezone.utc)
     token = jwt.encode(
         {
             "iss": "aco",
             "iat": current_dt,
-            "exp": current_dt + timedelta(minutes=30),
+            "exp": current_dt + timedelta(minutes=expire_time),
             "user_id": user_id,
         },
         "ms_key",
         algorithm="HS256",
     )
-
+    # Todo: 차후 그룹 정보도 함께 넣는 것을 고려
     return token
 
 

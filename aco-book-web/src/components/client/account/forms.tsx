@@ -26,7 +26,7 @@ export function LoginForm({
 
   const handleSubmitButton = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const response = await sendFormRequest("token/", event.currentTarget)
+    const response = await sendFormRequest("token/", "POST", event.currentTarget)
     if (response.ok) {
       router.push(redirectRoute);
       router.refresh();
@@ -57,7 +57,7 @@ export function SignUpForm({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const response = await sendFormRequest("users/", event.currentTarget);
+    const response = await sendFormRequest("users/", "POST", event.currentTarget);
     if (response.ok) {
       router.push(redirectRoute);
       router.refresh();

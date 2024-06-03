@@ -1,162 +1,118 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional, Union
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
-from fastapi.responses import JSONResponse
+import pandas as pd
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
-import logging
+from sqlalchemy.sql import select
+
+from app.utils import generate_standard_response, parse_datetime
 
 from ..auth import verify_token
-from ..database import Currency, FinancialRecord, User, db
+from ..database import Asset, AssetRecord, UserGroupRelation, db
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
-class RecordBaseSchema(BaseModel):
+class AssetRecordSchema(BaseModel):
+    asset_id: int
     date: Optional[datetime] = None
     category: Optional[str] = None
-    detail: Optional[str] = None
-    asset: Optional[str] = None
-    payment_amount: Optional[float] = 0.0
-    currency: Optional[Currency] = None
-    approved_amount: Optional[float] = 0.0
-    note: Optional[str] = None
+    payment_amount: Union[int, float]
+    currency: str
+    approved_amount: Optional[Union[int, float]] = None
 
     @validator("date", pre=True, always=True)
     def parse_date(cls, val):
-        if isinstance(val, int):
-            return datetime.fromtimestamp(val, timezone.utc)
+        if val is None:
+            return datetime.now().astimezone(tz=timezone.utc)
+        else:
+            result = parse_datetime(val)
+            return result
 
-        if isinstance(val, str):
-            try:
-                return datetime.strptime(val, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
-                    tzinfo=timezone.utc
-                )
-            except ValueError:
-                raise ValueError("Invalid date format")
-
-        if val is not None:
-            raise ValueError("Unknown date format")
-
-        return datetime.now().astimezone(tz=timezone.utc)
-
-
-class RecordChangeSchema(RecordBaseSchema):
-    username: Optional[str] = None
-
-
-class RecordResponseSchema(RecordBaseSchema):
-    id: int
-    full_name: str
+class DeleteAssetRecordSchema(BaseModel):
+    id: List[int]
 
 
 @router.get("/records/", tags=["records"], response_class=JSONResponse)
-async def get_record_all(
-    res: Response, token: str = Cookie(None), db: Session = Depends(db.get_db)
-):
-    _, token = verify_token(token)
+async def get_all_records(token: str = Cookie(None), db: Session = Depends(db.get_db)):
+    user_id = verify_token(token)
 
-    results = (
-        db.query(FinancialRecord, User.full_name)
-        .join(User, FinancialRecord.user_id == User.id)
-        .all()
-    )
+    user_groups = select(UserGroupRelation.group_id).filter(UserGroupRelation.user_id == user_id).scalar_subquery()
+    records = db.query(AssetRecord).join(Asset, AssetRecord.asset_id == Asset.id).filter(Asset.owner_group_id.in_(user_groups)).all()
 
-    column_names = list(RecordResponseSchema.model_fields.keys())
-    records = [
-        [
-            getattr(record, col) if hasattr(record, col) else full_name
-            for col in column_names
-        ]
-        for record, full_name in results
-    ]
-
-    res.set_cookie(key="token", value=token, httponly=True)
-    return {"columns": column_names, "rows": records}
+    result = generate_standard_response(records, db_type=AssetRecord, db=db)
+    
+    return JSONResponse(result)
 
 
 @router.post("/records/", tags=["records"], response_class=JSONResponse)
-async def add_record(
-    res: Response,
-    record: RecordChangeSchema,
-    token: str = Cookie(None),
-    db: Session = Depends(db.get_db),
-):
-    user_id, token = verify_token(token)
-    if record.username is not None:
-        user_id = db.query(User.id).filter(User.username == record.username).first()[0]
+async def create_record(record_info: AssetRecordSchema, token: str = Cookie(None), db: Session = Depends(db.get_db)):
+    user_id = verify_token(token)
 
-    try:
-        fi_rec = FinancialRecord(
-            date=record.date,
-            user_id=user_id,  # 유저 ID 설정
-            category=record.category,
-            detail=record.detail,
-            asset=record.asset,
-            payment_amount=record.payment_amount,
-            currency=record.currency,
-            approved_amount=record.approved_amount,
-            note=record.note,
-        )
+    # Verify the user is a member of the group owning the asset
+    asset = db.query(Asset).filter(Asset.id == record_info.asset_id).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
 
-        db.add(fi_rec)
-        db.commit()
-        db.refresh(fi_rec)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="DateTime format may not correct")
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+    group_relation = db.query(UserGroupRelation).filter(UserGroupRelation.group_id == asset.owner_group_id, UserGroupRelation.user_id == user_id).first()
+    if not group_relation:
+        raise HTTPException(status_code=403, detail="You do not have permission to create a record for this asset")
 
-    res.set_cookie(key="token", value=token, httponly=True)
-    return dict(list(record.model_dump().items())[1:3])
+    approved_amount = record_info.approved_amount if record_info.approved_amount is not None else record_info.payment_amount
+    record = AssetRecord(
+        asset_id=record_info.asset_id,
+        date=record_info.date,
+        category=record_info.category,
+        payment_amount=record_info.payment_amount,
+        currency=record_info.currency,
+        approved_amount=approved_amount
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+
+    return JSONResponse(content={"result": "OK"})
 
 
-@router.put("/records/{data_id}/", tags=["records"], response_class=JSONResponse)
-async def update_record(
-    res: Response,
-    data_id: int,
-    record: RecordChangeSchema,
-    token: str = Cookie(None),
-    db: Session = Depends(db.get_db),
-):
-    _, token = verify_token(token)
-    new_data = record.model_dump(exclude_unset=True)
-    if record.username is not None:
-        del new_data["username"]
-        new_data["user_id"] = db.query(User.id).filter(User.username == record.username).first()[0]
+@router.delete("/records/", tags=["records"], response_class=JSONResponse)
+async def delete_record(targets: DeleteAssetRecordSchema, token: str = Cookie(None), db: Session = Depends(db.get_db)):
+    user_id = verify_token(token)
 
-    db.query(FinancialRecord).filter(FinancialRecord.id == data_id).update(new_data)
+    # Get records and check if user has permission to delete them
+    records = db.query(AssetRecord).filter(AssetRecord.id.in_(targets.id)).all()
+    if not records:
+        raise HTTPException(status_code=400, detail="No records found")
 
-    try:
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+    for record in records:
+        asset = db.query(Asset).filter(Asset.id == record.asset_id).first()
+        if not asset:
+            raise HTTPException(status_code=404, detail="Asset not found")
 
-    res.set_cookie(key="token", value=token, httponly=True)
-    return {"message": "Record updated successfully"}
+        group_relation = db.query(UserGroupRelation).filter(UserGroupRelation.group_id == asset.owner_group_id, UserGroupRelation.user_id == user_id).first()
+        if not group_relation:
+            raise HTTPException(status_code=403, detail=f"You do not have permission to delete the record for asset: {asset.name}")
 
+    db.query(AssetRecord).filter(AssetRecord.id.in_(targets.id)).delete(synchronize_session=False)
+    db.commit()
 
-# Todo: 추후 구현하기
-@router.delete("/records/{data_id}/", tags=["records"], response_class=JSONResponse)
-async def delete_record(
-    res: Response,
-    data_id: int,
-    token: str = Cookie(None),
-    db: Session = Depends(db.get_db),
-):
-    _, token = verify_token(token)
+    return JSONResponse(content={"result": "OK"})
 
-    db.query(FinancialRecord).filter(FinancialRecord.id == data_id).delete()
+# --------------------------------------------
 
-    try:
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+@router.get("/records/export", tags=["records"], response_class=FileResponse)
+async def export_data(token: str = Cookie(None), db: Session = Depends(db.get_db)):
+    user_id = verify_token(token)
 
-    res.set_cookie(key="token", value=token, httponly=True)
-    return {"message": "Record delete successfully"}
+    user_groups = select(UserGroupRelation.group_id).filter(UserGroupRelation.user_id == user_id).scalar_subquery()
+    records = db.query(AssetRecord).join(Asset, AssetRecord.asset_id == Asset.id).filter(Asset.owner_group_id.in_(user_groups)).all()
+
+    result = generate_standard_response(records, db_type=AssetRecord, db=db)
+    df = pd.DataFrame(result["data"])
+    
+    file_path = f"./output/export_{user_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx"
+    df.to_excel(file_path, index=False)
+
+    # 파일을 반환
+    return FileResponse(path=file_path, filename=file_path, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

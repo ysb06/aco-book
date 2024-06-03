@@ -1,19 +1,20 @@
 import { cookies } from "next/headers";
 import { sendRequest } from "libraries/requests";
+import { DataType, isDataType } from "libraries/utils";
 
 async function sendServerRequest(
   route: string,
-  requestBody: object,
-  method: string = "POST"
+  method: string = "POST",
+  requestBody: object = {}
 ) {
-  const result = sendRequest(route, requestBody, method, cookies().toString());
+  const result = sendRequest(route, method, cookies().toString(), requestBody);
   return result;
 }
 
 export async function sendFormRequest(
   route: string,
-  raw: HTMLFormElement,
-  method: string = "POST"
+  method: string = "POST",
+  raw: HTMLFormElement
 ) {
   const formData = new FormData(raw);
   const requestBody: { [key: string]: string } = {};
@@ -21,38 +22,29 @@ export async function sendFormRequest(
     requestBody[key] = value.toString();
   });
 
-  return await sendServerRequest(route, requestBody, method);
+  return await sendServerRequest(route, method, requestBody);
 }
 
 export async function sendIdsRequest(
   route: string,
-  ids: Set<number>,
-  method: string = "DELETE"
+  method: string = "DELETE",
+  ids: Set<number>
 ) {
-  return await sendServerRequest(route, { id: Array.from(ids) }, method);
+  return await sendServerRequest(route, method, { id: Array.from(ids) });
 }
 
 export async function sendObjectRequest(
   route: string,
-  object: { [key: string]: number | string },
-  method: string = "POST"
+  method: string = "POST",
+  objectData: { [key: string]: number | string } = {}
 ) {
-  return await sendServerRequest(route, object, method);
+  return await sendServerRequest(route, method, objectData);
 }
-// ----------------------------------------------
-
-
-
-
-
-
-
-type RequestData = Set<number> | { [key: string]: number | string };
 
 export interface DataTableRaw {
-  data: Array<{ [key: string]: string | number }>;
   columns: string[];
-  dtypes: { [key: string]: string };
+  data: Array<{ [key: string]: string | number }>;
+  dtypes: { [key: string]: DataType };
 }
 
 function isDataTableResponse(body: any): body is DataTableRaw {
@@ -73,65 +65,16 @@ function isDataTableResponse(body: any): body is DataTableRaw {
           (val) => typeof val === "string" || typeof val === "number"
         )
     );
-    const areDtypesValid = Object.values(body.dtypes).every(
-      (val) => typeof val === "string"
-    );
-    return isDataValid && areDtypesValid;
+
+    const isDtypesValid = Object.values(body.dtypes).every(isDataType);
+
+    return isDataValid && isDtypesValid;
   }
   return false;
 }
 
-export async function requestToServer(
-  route: string,
-  requestContent: RequestData,
-  method: string = "POST"
-) {
-  const url = new URL(route, process.env.NEXT_PUBLIC_SERVER_ADDRESS);
-  const token = cookies().get("token")?.value;
-  const headers: { "Content-Type": string; Cookie?: string } = {
-    "Content-Type": "application/json",
-  };
-  const requestRaw: RequestInit = {
-    method: method,
-    headers: headers,
-  };
-  if (token) {
-    headers["Cookie"] = `token=${token}`;
-    requestRaw["credentials"] = "include";
-  }
-
-  let requestBody = {};
-  if (requestContent instanceof Set) {
-    requestBody = { ids: Array.from(requestContent) };
-  } else if (typeof requestContent === "object") {
-    requestBody = requestContent;
-  }
-  
-  if (method !== "GET") {
-    requestRaw["body"] = JSON.stringify(requestBody);
-  }
-
-  const response = await fetch(url, requestRaw);
-  const responseBody = await response.json();
-  const result = {
-    ok: response.ok,
-    status: response.status,
-    body: responseBody,
-  };
-
-  return result;
-}
-
-function getBodyForDatum(contents: { [key: string]: number | string }) {
-
-}
-
-function getBodyForIds(contents: Set<number>) {
-  // Todo: Delete 함수 구현 후 완성
-}
-
 export async function getDataTable(route: string) {
-  const raw = await getFromServer(route);
+  const raw = await sendServerRequest(route, "GET");
   const resultBody = raw.ok && isDataTableResponse(raw.body) ? raw.body : null;
   return { ok: raw.ok, status: raw.status, body: resultBody };
 }
