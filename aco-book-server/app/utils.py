@@ -5,8 +5,6 @@ from sqlalchemy.sql.schema import ForeignKey
 import enum
 from datetime import datetime, timezone
 
-# Todo: Need refactoring standard response generation code in future
-
 def generate_standard_response(
     data: Union[List[DeclarativeMeta], List[Dict[Any, Any]]],
     db_type: Optional[DeclarativeMeta] = None,
